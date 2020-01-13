@@ -3,7 +3,6 @@
 .game-board {
   border: 1px solid black;
   width: 20em;
-  /*height: 20em;*/
   margin: auto;
   display:flex;
   flex-wrap: wrap;
