@@ -4,7 +4,7 @@
   border: 1px solid black;
   width: 20em;
   margin: auto;
-  display:flex;
+  display:none;
   flex-wrap: wrap;
 }
 

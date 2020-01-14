@@ -1,6 +1,6 @@
 const Player = function ( name, marker, isPlayerTurn = false ) {
-  const updateTurn =  () => {
-    return this.isPlayerTurn = ! this.isPlayerTurn;
+  const updateTurn =  ( player ) => {
+    return player.isPlayerTurn = ! player.isPlayerTurn;
   }
 
   return {
@@ -39,6 +39,8 @@ const gameBoard = ( function () {
 
 const displayController = ( function () {
   const boardCells = document.getElementsByClassName( "game-cell");
+  const resultDiv = document.getElementsByClassName( "gameResult" )[0];
+  const resultHeadline = document.createElement( "h2" );
 
   const renderGameBoard = ( board ) => {
     board.forEach(( cell, index ) => {
@@ -46,10 +48,7 @@ const displayController = ( function () {
     });
   };
 
-  const displayEndOfGame = ( winningLine, winningMarker ) => {
-    const resultDiv = document.getElementsByClassName( "gameResult" )[0];
-    const resultHeadline = document.createElement( "h2" );
-
+  const displayEndOfGame = ( winningLine, playerName ) => {
     const addStylingClass = ( cells ) => {
       [...boardCells].forEach( ( element, index ) => {
         if ( cells.includes( index ) ) {
@@ -59,16 +58,28 @@ const displayController = ( function () {
     };
 
     if ( winningLine ) {
-      resultHeadline.textContent = `Player ${winningMarker} has won the game !`;
+      resultHeadline.textContent = `${playerName} has won the game !`;
       addStylingClass( winningLine );
     } else {
       resultHeadline.textContent = "It's a draw! Nobody wins this time...";
     }
     resultDiv.appendChild( resultHeadline );
   }
+
+  const clearDisplayState = () => {
+    resultDiv.innerHTML = '';
+
+    [...boardCells].forEach( cell => {
+      if ( cell.classList.contains( "winning-cell" )) {
+        cell.classList.remove( "winning-cell" );
+      }
+    });
+  }
+
   return {
-    renderGameBoard,
+    clearDisplayState,
     displayEndOfGame,
+    renderGameBoard,
   };
 })();
 
@@ -76,31 +87,50 @@ const gameFlow = ( function () {
   const board = document.getElementsByClassName( "game-board" )[0];
   const startButton = document.getElementsByClassName( "button__start" )[0];
 
+  let _firstPlayer;
+  let _secondPlayer;
+
   const initializeGame = () => {
     startButton.addEventListener( "click", startGame );
     board.addEventListener( "click", handleClick );
   };
 
   const startGame = ( event ) => {
-    const firstPlayerName = document.getElementById( "firstPlayer" ).value || "first player";
-    const secondPlayerName = document.getElementById( "secondPlayer" ).value || "second player";
+    const firstInput = document.getElementById( "firstPlayer" );
+    const secondInput = document.getElementById( "secondPlayer" );
+
+    const firstPlayerName = firstInput.value || "first player";
+    const secondPlayerName = secondInput.value || "second player";
+
+    firstInput.value = '';
+    secondInput.value = '';
+
+    resetGameState();
 
     createPlayers( firstPlayerName, secondPlayerName );
+
+    board.style.display = "flex";
+
+    event.target.textContent = "Restart Game";
   };
 
   const createPlayers = ( firstName, secondName ) => {
-    const firstPlayer  = Player( firstName, 'X', true );
-    const secondPlayer = Player( secondName, 'O', true );
-
-      return firstPlayer, secondPlayer;
+    _firstPlayer  = Player( firstName, 'X', true );
+    _secondPlayer = Player( secondName, 'O' );
   };
 
   const handleClick = ( event ) => {
     gameFlow.move( event.target );
   };
 
+  const resetGameState = () => {
+    gameBoard.resetGameBoard();
+    displayController.clearDisplayState();
+    gameRules.resetWinningLine();
+  }
+
   const move = ( target ) => {
-    const players      = [firstPlayer, secondPlayer];
+    const players      = [_firstPlayer, _secondPlayer];
     const activePlayer = players[0].isPlayerTurn ? players[0] : players[1];
 
     if ( target.textContent !== '' ) {
@@ -111,29 +141,14 @@ const gameFlow = ( function () {
 
     gameBoard.updateBoardContent( target, activePlayer.marker );
 
-    gameFlow.isEndOfGame( gameBoard.boardContent, activePlayer.marker );
+    gameFlow.isEndOfGame( gameBoard.boardContent, activePlayer.name );
   }
 
-  const isEndOfGame = ( board, winningMarker ) => {
+  const isEndOfGame = ( board, playerName ) => {
     if ( gameRules.isAWin( board ) || gameRules.isADraw( board )) {
-      return displayController.displayEndOfGame( gameRules.winningLine, winningMarker );
-      //return handleEndOfGame( gameRules.winningLine );
+      return displayController.displayEndOfGame( gameRules.winningLine, playerName );
     }
       return false;
-  }
-
-  const handleEndOfGame = ( winningLine ) => {
-    if ( winningLine ) {
-      //console.log(' it\'s a win!' );
-      console.log( winningLine );
-    } else {
-      //console.log( 'drawwwww' );
-    }
-    resetGameState();
-  }
-
-  const resetGameState = () => {
-    gameBoard.resetGameBoard();
   }
 
   return {
@@ -201,11 +216,14 @@ const gameRules = ( function() {
       return _winningLine !== '' ? true : false;
     }
 
-
   const isADraw = ( board ) => {
     return board.every( cell => {
       return cell !== '';
     });
+  }
+
+  const resetWinningLine = () => {
+    _winningLine = '';
   }
 
   return{
@@ -214,12 +232,9 @@ const gameRules = ( function() {
     get winningLine() {
       return _winningLine;
     },
+    resetWinningLine,
   }
 })();
-
-//const firstPlayer = Player( 'X', true );
-//const secondPlayer = Player( 'O' );
-
 
 gameFlow.initializeGame();
 displayController.renderGameBoard( gameBoard.boardContent );
