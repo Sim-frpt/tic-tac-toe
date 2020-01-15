@@ -39,8 +39,9 @@ const gameBoard = ( function () {
 
 const displayController = ( function () {
   const boardCells = document.getElementsByClassName( "game-cell");
-  const resultDiv = document.getElementsByClassName( "gameResult" )[0];
+  const resultDiv = document.getElementsByClassName( "game-result" )[0];
   const resultHeadline = document.createElement( "h2" );
+  const gameInfo = document.getElementsByClassName( "game-info" )[0];
 
   const renderGameBoard = ( board ) => {
     board.forEach(( cell, index ) => {
@@ -58,7 +59,7 @@ const displayController = ( function () {
     };
 
     if ( winningLine ) {
-      resultHeadline.textContent = `${playerName} has won the game !`;
+      resultHeadline.textContent = `${playerName} has won the game ! Congratulations!!!`;
       addStylingClass( winningLine );
     } else {
       resultHeadline.textContent = "It's a draw! Nobody wins this time...";
@@ -68,6 +69,7 @@ const displayController = ( function () {
 
   const clearDisplayState = () => {
     resultDiv.innerHTML = '';
+    gameInfo.innerHTML = '';
 
     [...boardCells].forEach( cell => {
       if ( cell.classList.contains( "winning-cell" )) {
@@ -76,7 +78,20 @@ const displayController = ( function () {
     });
   }
 
+  const addPlayersInfo = ( ...playerNames ) => {
+    playerNames.forEach( player => {
+      const paragraph = document.createElement( "p" );
+
+      paragraph.classList.add( "player-info" );
+
+      paragraph.textContent = `${player.name}'s mark is ${player.marker}`
+
+      gameInfo.append( paragraph );
+    });
+  }
+
   return {
+    addPlayersInfo,
     clearDisplayState,
     displayEndOfGame,
     renderGameBoard,
@@ -111,6 +126,8 @@ const gameFlow = ( function () {
 
     board.style.display = "flex";
 
+    displayController.addPlayersInfo( gameFlow.firstPlayer, gameFlow.secondPlayer );
+
     event.target.textContent = "Restart Game";
   };
 
@@ -133,7 +150,7 @@ const gameFlow = ( function () {
     const players      = [_firstPlayer, _secondPlayer];
     const activePlayer = players[0].isPlayerTurn ? players[0] : players[1];
 
-    if ( target.textContent !== '' ) {
+    if ( target.textContent || gameRules.winningLine ) {
       return;
     }
 
@@ -152,6 +169,12 @@ const gameFlow = ( function () {
   }
 
   return {
+    get firstPlayer() {
+      return _firstPlayer;
+    },
+    get secondPlayer() {
+      return _secondPlayer;
+    },
     initializeGame,
     move,
     isEndOfGame,
